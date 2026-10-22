@@ -1,0 +1,15 @@
+<!--
+  NetWatch.Core — библиотека классов (classlib). Здесь вся "логика":
+  сбор соединений, история, анализаторы. Она не знает ничего про интерфейс,
+  поэтому её используют и консольная версия, и графическое приложение.
+  Общие настройки (net10.0, Nullable и т.д.) берутся из Directory.Build.props.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- Лёгкий провайдер SQLite от Microsoft. Нативная библиотека sqlite подтягивается автоматически
+         для Windows и Linux. "10.0.*" — берём последнюю версию 10.0.x. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.*" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,19 @@
+<!--
+  NetWatch.Cli — консольная версия. Удобна для отладки ядра, работы по SSH на сервере
+  и запуска с правами администратора/root без графики.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Exe — обычная консольная программа -->
+    <OutputType>Exe</OutputType>
+    <!-- Имя итогового файла: netwatch(.exe) -->
+    <AssemblyName>netwatch</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Ссылка на наше ядро -->
+    <ProjectReference Include="..\NetWatch.Core\NetWatch.Core.csproj" />
+  </ItemGroup>
+
+</Project>

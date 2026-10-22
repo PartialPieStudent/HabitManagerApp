@@ -1,0 +1,170 @@
+<!--
+  Главное окно. Здесь только РАЗМЕТКА (как выглядит), вся логика — в MainWindowViewModel.
+
+  Как читать привязки:
+    Text="{Binding FilterText}"          — текст поля связан со свойством FilterText во ViewModel (в обе стороны)
+    Command="{Binding AnalyzeAiCommand}" — по нажатию кнопки выполнится команда AnalyzeAiCommand
+    ItemsSource="{Binding Connections}"  — таблица показывает элементы коллекции Connections
+  Внутри строки таблицы {Binding ProcessName} уже относится к ConnectionRowViewModel (к своей строке).
+
+  xmlns:conv="using:..." — подключаем пространство имён C#, чтобы использовать наш конвертер.
+  d:DesignWidth/Height — размеры только для превью в IDE, на работу программы не влияют.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="using:NetWatch.Desktop.Converters"
+        mc:Ignorable="d" d:DesignWidth="1300" d:DesignHeight="760"
+        x:Class="NetWatch.Desktop.Views.MainWindow"
+        Title="NetWatch — монитор сетевых подключений"
+        Width="1300" Height="760" MinWidth="800" MinHeight="450"
+        WindowStartupLocation="CenterScreen">
+
+  <!-- Ресурсы окна: объекты, на которые можно ссылаться через {StaticResource ключ} -->
+  <Window.Resources>
+    <conv:RiskToBrushConverter x:Key="RiskToBrush" />
+  </Window.Resources>
+
+  <!-- Стили: общие правила оформления для элементов этого окна (похоже на CSS) -->
+  <Window.Styles>
+    <Style Selector="WrapPanel.toolbar > :is(Control)">
+      <Setter Property="Margin" Value="0,0,8,6" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Шрифт фиксированной ширины для журнала, чтобы цифры стояли ровно.
+         :is(TextBlock) — "TextBlock или любой его наследник" (SelectableTextBlock наследуется от TextBlock).
+         Просто "TextBlock.mono" сработал бы только для элементов ровно типа TextBlock. -->
+    <Style Selector=":is(TextBlock).mono">
+      <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, Menlo, monospace" />
+    </Style>
+  </Window.Styles>
+
+  <!-- DockPanel: дочерние элементы "прилипают" к краям (Top/Bottom), последний заполняет остаток -->
+  <DockPanel Margin="10">
+
+    <!-- ===== Панель инструментов ===== -->
+    <WrapPanel Classes="toolbar" DockPanel.Dock="Top">
+      <TextBox Width="300"
+               Watermark="Фильтр: процесс, IP, порт, хост, PID..."
+               Text="{Binding FilterText}" />
+      <CheckBox Content="Скрыть localhost" IsChecked="{Binding HideLoopback}" />
+      <CheckBox Content="Скрыть слушающие порты" IsChecked="{Binding HideListening}" />
+      <ToggleButton Content="Пауза" IsChecked="{Binding IsPaused}" />
+
+      <!-- Пустой отступ между группами элементов -->
+      <Border Width="16" />
+
+      <CheckBox Content="Анализ только выделенного" IsChecked="{Binding AnalyzeSelectedOnly}" />
+      <Button Content="Проверить в Kaspersky OpenTIP" Command="{Binding AnalyzeKasperskyCommand}" />
+      <Button Content="Спросить ИИ" Command="{Binding AnalyzeAiCommand}" />
+      <!-- Крутилка, видна только во время анализа -->
+      <ProgressBar IsIndeterminate="True" Width="80" IsVisible="{Binding IsAnalyzing}" />
+    </WrapPanel>
+
+    <!-- ===== Строка состояния внизу ===== -->
+    <TextBlock DockPanel.Dock="Bottom" Margin="0,6,0,0" Opacity="0.8" Text="{Binding StatusText}" />
+
+    <!-- ===== Вкладки ===== -->
+    <TabControl>
+
+      <!-- ===== Вкладка 1: активные соединения ===== -->
+      <TabItem Header="Активные">
+        <!-- Grid с двумя строками: таблица (занимает всё) + панель подробностей (по размеру содержимого) -->
+        <Grid RowDefinitions="*,Auto">
+
+          <DataGrid Grid.Row="0"
+                    ItemsSource="{Binding Connections}"
+                    SelectedItem="{Binding SelectedConnection, Mode=TwoWay}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    CanUserSortColumns="True"
+                    CanUserResizeColumns="True"
+                    CanUserReorderColumns="True"
+                    GridLinesVisibility="Horizontal"
+                    SelectionMode="Single">
+            <DataGrid.Columns>
+              <!-- Простые текстовые колонки. Нажатие на заголовок — сортировка. -->
+              <DataGridTextColumn Header="Направление" Binding="{Binding DirectionText}" Width="110" />
+              <DataGridTextColumn Header="Прот." Binding="{Binding Protocol}" Width="60" />
+              <DataGridTextColumn Header="Процесс" Binding="{Binding ProcessName}" Width="150" />
+              <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="70" />
+              <DataGridTextColumn Header="Локальный адрес" Binding="{Binding LocalEndPoint}" Width="190" />
+              <DataGridTextColumn Header="Удалённый адрес" Binding="{Binding RemoteEndPoint}" Width="190" />
+              <DataGridTextColumn Header="Хост" Binding="{Binding RemoteHost}" Width="200" />
+              <DataGridTextColumn Header="Состояние" Binding="{Binding StateText}" Width="110" />
+              <DataGridTextColumn Header="Начало" Binding="{Binding FirstSeenText}" Width="90" />
+              <DataGridTextColumn Header="Длительность" Binding="{Binding DurationText}" Width="100" />
+
+              <!-- Колонка-шаблон: внутри ячейки можно разместить любые элементы.
+                   Здесь — цветная "плашка" с уровнем риска. SortMemberPath — по чему сортировать. -->
+              <DataGridTemplateColumn Header="Риск" Width="110" SortMemberPath="Risk">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <Border Background="{Binding Risk, Converter={StaticResource RiskToBrush}}"
+                            CornerRadius="4" Margin="4,2" Padding="6,2">
+                      <TextBlock Text="{Binding RiskText}" VerticalAlignment="Center" />
+                    </Border>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+
+              <DataGridTextColumn Header="Вердикт" Binding="{Binding Verdict}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+
+          <!-- Подробности о выделенной строке -->
+          <Border Grid.Row="1" Margin="0,8,0,0" Padding="8" CornerRadius="4"
+                  Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <SelectableTextBlock Text="{Binding SelectedDetails}" TextWrapping="Wrap" />
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <!-- ===== Вкладка 2: история из SQLite ===== -->
+      <TabItem Header="История">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,6">
+            <Button Content="Обновить" Command="{Binding RefreshHistoryCommand}" />
+            <TextBlock VerticalAlignment="Center" Opacity="0.7"
+                       Text="Последние 1000 записей. Фильтр сверху тоже применяется — нажмите «Обновить»." />
+          </StackPanel>
+
+          <DataGrid ItemsSource="{Binding History}"
+                    AutoGenerateColumns="False" IsReadOnly="True"
+                    CanUserSortColumns="True" CanUserResizeColumns="True"
+                    GridLinesVisibility="Horizontal">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Открыто" Binding="{Binding FirstSeenText}" Width="130" />
+              <DataGridTextColumn Header="Закрыто" Binding="{Binding ClosedAtText}" Width="130" />
+              <DataGridTextColumn Header="Длительность" Binding="{Binding DurationText}" Width="100" />
+              <DataGridTextColumn Header="Прот." Binding="{Binding Protocol}" Width="60" />
+              <DataGridTextColumn Header="Процесс" Binding="{Binding Process}" Width="150" />
+              <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="70" />
+              <DataGridTextColumn Header="Локальный адрес" Binding="{Binding LocalEndPoint}" Width="190" />
+              <DataGridTextColumn Header="Удалённый адрес" Binding="{Binding RemoteEndPoint}" Width="190" />
+              <DataGridTextColumn Header="Хост" Binding="{Binding RemoteHost}" Width="200" />
+              <DataGridTextColumn Header="Риск" Binding="{Binding Risk}" Width="100" />
+              <DataGridTextColumn Header="Вердикт" Binding="{Binding Verdict}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
+      </TabItem>
+
+      <!-- ===== Вкладка 3: журнал событий ===== -->
+      <TabItem Header="Журнал">
+        <DockPanel>
+          <Button DockPanel.Dock="Top" Content="Очистить" Command="{Binding ClearLogCommand}" Margin="0,0,0,6" />
+          <ListBox ItemsSource="{Binding Log}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <SelectableTextBlock Text="{Binding}" Classes="mono" TextWrapping="Wrap" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+
+    </TabControl>
+  </DockPanel>
+</Window>

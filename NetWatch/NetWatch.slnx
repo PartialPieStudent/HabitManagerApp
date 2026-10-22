@@ -1,0 +1,12 @@
+<!--
+  Файл решения (solution) в новом XML-формате .slnx.
+  Его понимают .NET SDK 9.0.200+ / .NET 10, Visual Studio 2022 (17.13+), Rider и VS Code.
+  Решение — это просто "контейнер", который объединяет несколько проектов.
+-->
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NetWatch.Core/NetWatch.Core.csproj" />
+    <Project Path="src/NetWatch.Cli/NetWatch.Cli.csproj" />
+    <Project Path="src/NetWatch.Desktop/NetWatch.Desktop.csproj" />
+  </Folder>
+</Solution>

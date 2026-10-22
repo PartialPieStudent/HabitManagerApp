@@ -1,0 +1,19 @@
+<!--
+  Directory.Build.props автоматически подключается ко ВСЕМ проектам в этой папке и ниже.
+  Удобно, чтобы не повторять одни и те же настройки в каждом .csproj.
+-->
+<Project>
+  <PropertyGroup>
+    <!-- Версия .NET. .NET 10 — актуальная LTS-версия (долгая поддержка). -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Включаем проверку null-ссылок: компилятор предупредит, если где-то может быть null. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Автоматические using для System, System.Linq, System.IO и т.п. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Самая свежая версия языка C#, которую поддерживает установленный SDK. -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>

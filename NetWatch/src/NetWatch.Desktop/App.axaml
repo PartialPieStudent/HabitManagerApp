@@ -1,0 +1,23 @@
+<!--
+  App.axaml — описание приложения в целом: тема и общие стили.
+  .axaml — это XAML-файл Avalonia (буква "a" отличает его от XAML WPF).
+
+  xmlns — "пространства имён" XML: какие элементы можно использовать в файле.
+    https://github.com/avaloniaui                — все стандартные элементы Avalonia (Window, Button...)
+    http://schemas.microsoft.com/winfx/2006/xaml — служебные атрибуты x:Class, x:Key и т.п.
+  x:Class — какой C#-класс является "второй половинкой" этого файла (App.axaml.cs).
+  RequestedThemeVariant="Default" — светлая или тёмная тема, как в системе.
+-->
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NetWatch.Desktop.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Styles>
+    <!-- Основная тема -->
+    <FluentTheme />
+    <!-- Стили для DataGrid ОБЯЗАТЕЛЬНО подключать отдельно, иначе таблица будет невидимой! -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+  </Application.Styles>
+
+</Application>

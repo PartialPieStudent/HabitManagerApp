@@ -10,7 +10,7 @@ public static class TestDataGenerator
 
     public static IReadOnlyList<Habit> GenerateHabits()
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.Now); //.UtcNow bija nomainīts uz .Now, lai tika rādits pareizs datums, jo Utc ņem tās 2/3 stundas atpakaļ.
 
         //demo-user-1
         var drinkWater = Habit.Create(

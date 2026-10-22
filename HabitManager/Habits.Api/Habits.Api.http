@@ -1,0 +1,114 @@
+@baseUrl = http://localhost:5080
+@user = demo-user-1
+# Paste a real id from the "List" response here (ids change on every API start):
+@habitId = a0f89262-9334-4d84-8133-330f6153a322
+@today = {{$datetime "yyyy-MM-dd"}}
+
+### 1. List (active)
+GET {{baseUrl}}/api/habits
+X-User-Id: {{user}}
+
+### 2. List including archived
+GET {{baseUrl}}/api/habits?includeArchived=true
+X-User-Id: {{user}}
+
+### 3. Get one
+GET {{baseUrl}}/api/habits/{{habitId}}
+X-User-Id: {{user}}
+
+### 4. ERROR 404 - habit doesn't exist
+GET {{baseUrl}}/api/habits/11111111-1111-1111-1111-111111111111
+X-User-Id: {{user}}
+
+### 5. Create
+POST {{baseUrl}}/api/habits
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "userId": "ignored-by-server",
+  "title": "Stretching",
+  "description": "10 minutes after waking up",
+  "frequency": "Weekly",
+  "daysOfWeek": ["Monday", "Thursday"]
+}
+
+### 6. ERROR 400 - invalid title
+POST {{baseUrl}}/api/habits
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "userId": "",
+  "title": "   ",
+  "description": null,
+  "frequency": "Daily",
+  "daysOfWeek": []
+}
+
+### 7. Update
+PUT {{baseUrl}}/api/habits/{{habitId}}
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "id": "{{habitId}}",
+  "title": "Updated via API",
+  "description": "Changed from the .http file",
+  "isActive": true,
+  "frequency": "Daily",
+  "daysOfWeek": []
+}
+
+### 8. Mark completed today
+POST {{baseUrl}}/api/habits/{{habitId}}/completions
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "habitId": "{{habitId}}",
+  "date": "{{today}}"
+}
+
+### 9. ERROR 409 - same date again (run #8 twice)
+POST {{baseUrl}}/api/habits/{{habitId}}/completions
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "habitId": "{{habitId}}",
+  "date": "{{today}}"
+}
+
+### 10. Completion history
+GET {{baseUrl}}/api/habits/{{habitId}}/completions
+X-User-Id: {{user}}
+
+### 11. Unmark today
+DELETE {{baseUrl}}/api/habits/{{habitId}}/completions/{{today}}
+X-User-Id: {{user}}
+
+### 12. Archive
+POST {{baseUrl}}/api/habits/{{habitId}}/archive
+X-User-Id: {{user}}
+
+### 13. ERROR 409 - mark an archived habit (run after #12)
+POST {{baseUrl}}/api/habits/{{habitId}}/completions
+X-User-Id: {{user}}
+Content-Type: application/json
+
+{
+  "habitId": "{{habitId}}",
+  "date": "{{today}}"
+}
+
+### 14. Restore from archive
+POST {{baseUrl}}/api/habits/{{habitId}}/restore
+X-User-Id: {{user}}
+
+### 15. ERROR 400 - no user header
+GET {{baseUrl}}/api/habits
+
+### 16. Delete
+DELETE {{baseUrl}}/api/habits/{{habitId}}
+X-User-Id: {{user}}

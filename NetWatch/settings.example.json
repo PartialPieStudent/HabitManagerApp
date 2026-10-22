@@ -1,0 +1,40 @@
+// Пример настроек NetWatch.
+// Скопируйте этот файл в settings.json (в эту же папку) и впишите свои ключи.
+// settings.json добавлен в .gitignore, чтобы ключи случайно не попали в git.
+// Комментарии в этом файле разрешены — программа их пропускает.
+{
+  // Как часто опрашивать таблицу соединений (в секундах).
+  "PollIntervalSeconds": 2,
+
+  // Определять имя хоста по IP (reverse DNS). Отключите, если не хотите лишних DNS-запросов.
+  "ResolveDns": true,
+
+  // Файл истории (SQLite). Относительный путь считается от папки с программой.
+  "DatabasePath": "netwatch.db",
+
+  "OpenTip": {
+    // Ключ Kaspersky OpenTIP: зарегистрируйтесь на https://opentip.kaspersky.com,
+    // затем в профиле откройте раздел API и создайте токен.
+    // Можно не писать сюда, а задать переменную окружения NETWATCH_OPENTIP_KEY.
+    "ApiKey": "x16I6/R5Td2y9bXMvmcapg==",
+
+    // Максимум запросов за один запуск анализа (у бесплатного API есть суточный лимит).
+    "MaxRequestsPerRun": 50
+  },
+
+  "Llm": {
+    // "Anthropic" — облачная модель Claude (нужен ключ с https://console.anthropic.com)
+    // "Ollama"    — локальная модель на вашем ПК (https://ollama.com), данные никуда не уходят.
+    "Provider": "Anthropic",
+
+    // Ключ Claude API. Можно вместо этого задать переменную окружения ANTHROPIC_API_KEY.
+    "ApiKey": "",
+    "Model": "claude-haiku-5-5",
+
+    "OllamaUrl": "http://localhost:11434",
+    "OllamaModel": "llama3.1",
+
+    // Сколько соединений максимум отправлять модели за один раз.
+    "MaxConnections": 80
+  }
+}

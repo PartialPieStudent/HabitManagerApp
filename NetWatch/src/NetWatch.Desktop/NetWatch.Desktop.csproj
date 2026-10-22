@@ -1,0 +1,41 @@
+<!--
+  NetWatch.Desktop — графическое приложение на Avalonia UI.
+  Avalonia — кроссплатформенный XAML-фреймворк: один и тот же код работает в Windows, Linux и macOS.
+  Если вы знакомы с WPF или .NET MAUI, синтаксис будет почти родным.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WinExe — оконное приложение: в Windows не будет открываться лишнее чёрное окно консоли.
+         В Linux это ничего не меняет. -->
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>NetWatch</AssemblyName>
+
+    <!-- Нужно Avalonia для работы с некоторыми системными API Windows -->
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+
+    <!-- Привязки ({Binding ...}) работают через "отражение" (reflection): проще для начала.
+         Скомпилированные привязки быстрее и проверяются при сборке — можно включить позже (см. GUIDE.md). -->
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Сама Avalonia и её запуск на десктопе -->
+    <PackageReference Include="Avalonia" Version="11.3.*" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.*" />
+    <!-- Тема оформления Fluent (в стиле Windows 11) -->
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.*" />
+    <!-- Шрифт Inter — одинаково выглядит на всех ОС -->
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.*" />
+    <!-- Таблица DataGrid вынесена в отдельный пакет -->
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.*" />
+
+    <!-- MVVM Toolkit от Microsoft: генерирует шаблонный код для свойств и команд ([ObservableProperty], [RelayCommand]) -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetWatch.Core\NetWatch.Core.csproj" />
+  </ItemGroup>
+
+</Project>
