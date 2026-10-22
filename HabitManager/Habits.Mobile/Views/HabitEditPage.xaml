@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Habits.Mobile.ViewModels"
+             x:Class="Habits.Mobile.Views.HabitEditPage"
+             x:DataType="vm:HabitEditViewModel"
+             Title="{Binding PageTitle}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="10">
+
+            <Label Text="Nosaukums" FontAttributes="Bold" />
+            <Entry Text="{Binding Title}" Placeholder="Piem., Izdzert 2 l ūdens" />
+
+            <Label Text="Apraksts" FontAttributes="Bold" />
+            <Editor Text="{Binding Description}"
+                    Placeholder="Nav obligāts"
+                    AutoSize="TextChanges" />
+
+            <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                <Switch IsToggled="{Binding IsWeekly}" />
+                <Label Text="Tikai noteiktās nedēļas dienās" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <FlexLayout BindableLayout.ItemsSource="{Binding Days}"
+                        Wrap="Wrap"
+                        IsVisible="{Binding IsWeekly}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DayOption">
+                        <HorizontalStackLayout Margin="0,0,12,0">
+                            <CheckBox IsChecked="{Binding IsSelected}" />
+                            <Label Text="{Binding Name}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+            <HorizontalStackLayout Spacing="8" Margin="0,16,0,0">
+                <Button Text="Saglabāt" Command="{Binding SaveCommand}" />
+                <Button Text="Atcelt" Command="{Binding CancelCommand}" />
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

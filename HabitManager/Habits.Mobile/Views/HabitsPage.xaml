@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Habits.Mobile.ViewModels"
+             x:Class="Habits.Mobile.Views.HabitsPage"
+             x:DataType="vm:HabitsViewModel"
+             Title="Mani ieradumi">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="+ Jauns" Command="{Binding AddCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16" RowSpacing="12">
+
+        <Label Grid.Row="0"
+               Text="{Binding TodaySummary}"
+               FontSize="18"
+               FontAttributes="Bold" />
+
+        <HorizontalStackLayout Grid.Row="1" Spacing="8">
+            <Switch IsToggled="{Binding ShowArchived}" />
+            <Label Text="Rādīt arhivētos" VerticalOptions="Center" />
+        </HorizontalStackLayout>
+
+        <RefreshView Grid.Row="2"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding LoadCommand}">
+            <CollectionView ItemsSource="{Binding Habits}">
+
+                <CollectionView.EmptyView>
+                    <Label Text="Nav neviena ieraduma"
+                           HorizontalOptions="Center"
+                           Margin="0,40" />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HabitListItem">
+                        <Border Padding="12"
+                                Margin="0,4"
+                                Stroke="LightGray"
+                                StrokeShape="RoundRectangle 8">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HabitsViewModel}}, Path=OpenCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+
+                                <VerticalStackLayout Spacing="2">
+                                    <Label Text="{Binding Title}"
+                                           FontSize="16"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding ScheduleText}"
+                                           FontSize="13" />
+                                    <Label Text="Arhivēts"
+                                           FontSize="13"
+                                           TextColor="Gray"
+                                           IsVisible="{Binding IsArchived}" />
+                                </VerticalStackLayout>
+
+                                <Button Grid.Column="1"
+                                        Text="{Binding ToggleText}"
+                                        IsVisible="{Binding IsActive}"
+                                        VerticalOptions="Center"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HabitsViewModel}}, Path=ToggleTodayCommand}"
+                                        CommandParameter="{Binding .}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

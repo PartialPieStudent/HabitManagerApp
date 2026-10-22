@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Habits.Mobile.ViewModels"
+             xmlns:shared="clr-namespace:Habits.Shared;assembly=Habits.Shared"
+             x:Class="Habits.Mobile.Views.HabitDetailPage"
+             x:DataType="vm:HabitDetailViewModel"
+             Title="Ieradums">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="10">
+
+            <!-- Info -->
+            <Label Text="{Binding Title}" FontSize="22" FontAttributes="Bold" />
+            <Label Text="{Binding Description}" IsVisible="{Binding HasDescription}" />
+            <Label Text="{Binding ScheduleText}" />
+            <Label Text="{Binding StatusText, StringFormat='Statuss: {0}'}" />
+            <Label Text="{Binding CreatedText, StringFormat='Izveidots: {0}'}" FontSize="13" TextColor="Gray" />
+            <Label Text="{Binding UpdatedText, StringFormat='Labots: {0}'}" FontSize="13" TextColor="Gray" />
+
+            <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                <Button Text="Labot" Command="{Binding EditCommand}" />
+                <Button Text="{Binding ArchiveButtonText}" Command="{Binding ToggleArchiveCommand}" />
+            </HorizontalStackLayout>
+
+            <!-- atzime noteiktu datumu aktivajam hobbijam -->
+            <Label Text="Atzīmēt izpildi"
+                   FontSize="18" FontAttributes="Bold" Margin="0,16,0,0"
+                   IsVisible="{Binding IsActive}" />
+            <HorizontalStackLayout Spacing="8" IsVisible="{Binding IsActive}">
+                <DatePicker Date="{Binding SelectedDate}"
+                            MaximumDate="{Binding MaxDate}"
+                            Format="dd.MM.yyyy" />
+                <Button Text="Atzīmēt" Command="{Binding MarkSelectedDateCommand}" />
+            </HorizontalStackLayout>
+
+            <!-- Vesture -->
+            <Label Text="Izpildes vēsture" FontSize="18" FontAttributes="Bold" Margin="0,16,0,0" />
+            <Label Text="Vēl nav neviena ieraksta." IsVisible="{Binding HasNoCompletions}" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Completions}" Spacing="4">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="shared:HabitCompletionDto">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="{Binding Date, StringFormat='{0:dd.MM.yyyy}'}"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="Noņemt"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:HabitDetailViewModel}}, Path=RemoveCompletionCommand}"
+                                    CommandParameter="{Binding .}" />
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

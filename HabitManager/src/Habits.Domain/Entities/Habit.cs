@@ -19,9 +19,6 @@ public sealed class Habit
 
     private readonly List<HabitCompletion> _completions = new();
 
-    /// <summary>
-    /// Read-only view of every completion recorded for this habit.
-    /// </summary>
     public IReadOnlyCollection<HabitCompletion> Completions => _completions.AsReadOnly();
 
     private Habit(
@@ -54,6 +51,47 @@ public sealed class Habit
             NormalizeDescription(description),
             recurrenceRule ?? RecurrenceRule.Daily(),
             DateTimeOffset.UtcNow);
+    }
+
+    public static Habit Restore(
+        Guid id,
+        string userId,
+        string title,
+        string? description,
+        bool isActive,
+        DateTimeOffset createdAt,
+        DateTimeOffset updatedAt,
+        RecurrenceRule recurrenceRule,
+        IEnumerable<(Guid Id, DateOnly Date)> completions)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("A stored habit must have a valid Id.", nameof(id));
+        }
+
+        ArgumentNullException.ThrowIfNull(recurrenceRule);
+        ArgumentNullException.ThrowIfNull(completions);
+
+        var habit = new Habit(
+            id,
+            ValidateUserId(userId),
+            ValidateTitle(title),
+            NormalizeDescription(description),
+            recurrenceRule,
+            createdAt)
+        {
+            IsActive = isActive,
+            UpdatedAt = updatedAt
+        } //.UtcNow ->  //mainat .UtcNow uz .Now datuma precizitātem
+        ;
+
+        foreach (var (completionId, date) in completions)
+        {
+            if (habit.IsCompletedOn(date)) continue;
+            habit._completions.Add(HabitCompletion.Restore(completionId, habit.Id, date));
+        }
+
+        return habit;
     }
 
     public void UpdateDetails(string title, string? description, RecurrenceRule? recurrenceRule = null)

@@ -1,0 +1,11 @@
+Diezgan liela daļa no koda, kur tiek izmantotas asinhronas darbības bija korrektētas ar Mākslīga intelekta palīdzību, jo pagaidām manas zināšanas darbā ar to ir ierobežotas
+
+Lai apskatīties pieraksta detaļas ir jānospiež uz pieraksta bloku
+Tas tiks labots vēlāk ar kādu respondīvu vizualizāciju (kk līdzīgu 'hover' kā html)
+
+README.md tiks atjaunots 3. mājasdarba ietvaros
+
+1)Windows machine - notestēts
+2)Android emulator - testēšu vēlāk
+3)Ios - meklēšu emulātoru vai realo lietotāju
+
