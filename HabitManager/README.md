@@ -7,6 +7,7 @@ Ieradumu uzskaites lietotne, kas tiek veidota pakāpeniski kursa laikā.
 | 1 | Domēna modelis, koplietojamie datu modeļi (DTO), testa dati, pārbaude konsoles lietotnē |
 | 2 | .NET MAUI lietotne, kas strādā bez servera un glabā datus lokālā JSON failā |
 | 3 | REST API (aplikācijas un infrastruktūras slānis, datu glabāšana atmiņā); lietotne tagad strādā caur API |
+| 4 | SQL Server datubāze (EF Core): API dati saglabājas arī pēc servera pārstartēšanas |
 
 ## Risinājuma struktūra
 
@@ -16,10 +17,11 @@ src/
   Habits.Domain/          entītijas, biznesa noteikumi, testa datu ģenerators
   Habits.Shared/          DTO + API galveņu nosaukumi (kopīgi API un lietotnei)
   Habits.Application/     lietojuma gadījumi (HabitService) + datu glabāšanas abstrakcija (IHabitRepository)
-  Habits.Infrastructure/  InMemoryHabitRepository (datubāzes implementācija būs 4. mājas darbā)
+  Habits.Infrastructure/  datu piekļuve: EfHabitRepository (SQL Server, EF Core) un InMemoryHabitRepository
   Habits.Api/             ASP.NET Core Web API ar "plāniem" kontrolieriem
   Habits.ConsoleApp/      domēna un testa datu pārbaude konsolē
 Habits.Mobile/            .NET MAUI lietotne (MVVM)
+database.sql              datubāzes struktūras SQL skripts (rezerves variants, sk. sadaļu "Datubāze")
 ```
 
 Visi projekti izmanto **.NET 9**.
@@ -41,7 +43,7 @@ Habits.ConsoleApp ──► Habits.Domain
 
 ```
 Lietotne:  View → ViewModel → IHabitService = ApiHabitService ──HTTP/JSON (Shared DTO)──►
-API:       HabitsController → HabitService → IHabitRepository = InMemoryHabitRepository
+API:       HabitsController → HabitService → IHabitRepository = EfHabitRepository ──EF Core──► SQL Server
                                    │
                                    └── Habit (Domain): visi biznesa noteikumi
 ```
@@ -68,8 +70,9 @@ lai to vēlāk būtu viegli sasaistīt ar ASP.NET Core Identity.
 
 ## Habits.Application
 
-- `Abstractions/IHabitRepository` — datu glabāšanas abstrakcija. 4. mājas darbā tiks
-  pievienota tikai datubāzes implementācija; servisi un API paliks nemainīgi.
+- `Abstractions/IHabitRepository` — datu glabāšanas abstrakcija. 4. mājas darbā tika
+  pievienota tikai datubāzes implementācija; aplikācijas slānis, API un mobilā lietotne
+  palika nemainīgi, un aplikācijas slānis nav piesaistīts konkrētai datubāzei.
 - `Services/HabitService` — lietojuma gadījumi: saraksts, viens ieradums, izveide,
   labošana, arhivēšana/atjaunošana, dzēšana, izpildes atzīmēšana/noņemšana,
   izpildes vēsture. Katra metode saņem pieprasītāja lietotāja ID, tāpēc lietotājs
@@ -80,12 +83,20 @@ lai to vēlāk būtu viegli sasaistīt ar ASP.NET Core Identity.
 
 ## Habits.Infrastructure
 
-`InMemoryHabitRepository` glabā ieradumus vārdnīcā (`Dictionary`), kamēr API darbojas
-(pēc pārstartēšanas dati pazūd), un palaišanas brīdī tiek aizpildīts ar
-`TestDataGenerator` datiem.
-Repozitorijs glabā un atgriež **kopijas** (izmantojot `Habit.Restore`), tāpēc tas
-uzvedas kā īsta datubāze: izmaiņas tiek saglabātas tikai pēc `UpdateAsync`.
-Piekļuve ir sinhronizēta ar `lock`, jo API apstrādā vairākus pieprasījumus vienlaikus.
+Datu piekļuves kods atrodas tikai šajā slānī (`Persistence/`).
+
+| Fails | Nozīme |
+|---|---|
+| `EfHabitRepository.cs` | **Pašreizējā implementācija** `IHabitRepository`: SQL Server caur EF Core |
+| `HabitsDbContext.cs` | Tabulu, atslēgu, saišu un indeksu apraksts |
+| `Entities/HabitEntity.cs`, `Entities/HabitCompletionEntity.cs` | Tabulu rindas (vienkāršas datu klases EF Core vajadzībām) |
+| `HabitEntityMapper.cs` | Pārveidošana "datubāzes rinda ⇄ domēna `Habit`" (caur `Habit.Restore`) |
+| `DatabaseInitializer.cs` | API palaišanā izveido datubāzi, izpilda migrācijas un pievieno testa datus, ja datubāze ir tukša |
+| `Migrations/` | EF Core migrācijas — datubāzes struktūras apraksts |
+| `InMemoryHabitRepository.cs` | 3. mājas darba glabātuve atmiņā, saglabāta kā alternatīva |
+
+Domēns nezina neko par datubāzi: EF Core strādā ar atsevišķām `*Entity` klasēm, nevis ar
+domēna `Habit`. Tāpēc domēna klasēs nebija jāmaina nekas datubāzes dēļ.
 
 ## Habits.Api
 
@@ -125,11 +136,68 @@ kontrolieros nav try/catch bloku.
 |---|---|---|
 | Ieradums neeksistē | 404 | `HabitNotFoundException` |
 | Nederīgs nosaukums vai dati, nav lietotāja galvenes | 400 | `ArgumentException` no domēna vai pieprasījuma validācija |
-| Arhivēta ieraduma atzīmēšana, atkārtots datums | 409 | `InvalidOperationException` no domēna |
+| Arhivēta ieraduma atzīmēšana, atkārtots datums | 409 | `InvalidOperationException` no domēna vai datubāzes unikālā indeksa pārkāpums |
 | Jebkura neparedzēta kļūda | 500 | tiek žurnalēta; klientam iekšējās detaļas netiek rādītas |
 
 Failā `Habits.Api.http` ir sagatavoti pieprasījumi katram endpointam un katrai
 kļūdas situācijai (tos var palaist tieši no Visual Studio).
+
+## Datubāze
+
+**SQL Server LocalDB** (`(localdb)\MSSQLLocalDB`) — tas pats SQL Server, ko iesaka uzdevums,
+bet bez atsevišķas servera instalācijas; tas tiek uzstādīts kopā ar Visual Studio
+(darba slodze "ASP.NET un tīmekļa izstrāde"). Savienojuma virkne: `Habits.Api/appsettings.json`
+(`ConnectionStrings:HabitsDb`). Tiek izmantota Windows autentifikācija, tāpēc repozitorijā nav paroļu.
+
+### Tabulas
+
+```
+Habits                                   HabitCompletions
+───────────────────────────────          ─────────────────────────────────
+Id           uniqueidentifier  PK        Id        uniqueidentifier  PK
+UserId       nvarchar(450)     indekss   HabitId   uniqueidentifier  FK → Habits.Id (kaskādes dzēšana)
+Title        nvarchar(200)               Date      date
+Description  nvarchar(max)  NULL         UNIQUE (HabitId, Date)
+IsActive     bit               (statuss: aktīvs / arhivēts)
+Frequency    nvarchar(20)      ("Daily" / "Weekly")
+DaysOfWeek   nvarchar(100)     ("Monday,Wednesday,Friday")
+CreatedAt    datetimeoffset
+UpdatedAt    datetimeoffset
+```
+
+### Datu integritāte
+
+- **Saite** ieradums → izpildes ieraksti ir ārējā atslēga `HabitId`; dzēšot ieradumu,
+  datubāze pati izdzēš tā izpildes ierakstus (nav "bāreņu" rindu).
+- **Vienā datumā viens ieraksts** tiek kontrolēts divos līmeņos:
+  1. aplikācijas līmenī — domēna noteikums `Habit.MarkCompleted` (atbilde 409);
+  2. datubāzes līmenī — unikālais indekss `UX_HabitCompletions_HabitId_Date`. Tas strādā
+     arī tad, ja divi pieprasījumi pienāk vienlaikus; `EfHabitRepository` šo kļūdu
+     (SQL 2601/2627) pārvērš tajā pašā atbildē 409.
+- Nosaukuma garums (200) kolonnā ņemts no tās pašas konstantes `Habit.MaxTitleLength`, ko izmanto domēns.
+
+### Datubāzes izveide citā datorā
+
+Nekas nav jādara manuāli: palaižot `Habits.Api`, `DatabaseInitializer` pats izveido datubāzi
+`HabitManager`, izpilda visas migrācijas un pievieno testa datus, ja datubāze ir tukša.
+Esošā datubāze saglabā savus datus.
+
+Prasības: Visual Studio ar SQL Server LocalDB (pārbaude: komanda `sqllocaldb info`
+parāda `MSSQLLocalDB`).
+
+Rezerves varianti:
+
+- manuāli izpildīt migrācijas (Package Manager Console):
+  `Update-Database -Project Habits.Infrastructure -StartupProject Habits.Api`
+- izpildīt SQL skriptu `database.sql` (izveidots ar `Script-Migration -Idempotent`) jebkurā SQL Server.
+
+Datubāzes saturu var apskatīt: **Skats → SQL Server objektu pārlūks** →
+`(localdb)\MSSQLLocalDB` → `HabitManager` → tabulas.
+
+### Glabātuves pārslēgšana
+
+`Habits.Api/appsettings.json`: `"Storage": "SqlServer"` (noklusējums) vai `"InMemory"`
+(3. mājas darba glabātuve atmiņā). Pārslēgšanās maina tikai `IHabitRepository` implementāciju.
 
 ## Habits.Mobile
 
@@ -173,7 +241,11 @@ API adrese atrodas failā `Services/Api/ApiSettings.cs`
 2. Projektam `Habits.Mobile` izvēlēties **Windows Machine** (vai Android emulatoru).
 3. **Atkļūdošana → Sākt bez atkļūdošanas** (Ctrl+F5).
 
+Pirmajā palaišanā API izveido datubāzi (sk. sadaļu "Datubāze"), tāpēc palaišana aizņem dažas sekundes ilgāk.
 API klausās adresē `http://localhost:5080`. Ja lietotne atveras ātrāk, nekā API ir gatavs,
 pietiek pavilkt sarakstu uz leju, lai to atjaunotu.
 
 Tikai konsoles pārbaude: iestatīt `Habits.ConsoleApp` kā startēšanas projektu un palaist.
+
+Uzmanību!!!
+Var gadīties tā, ka palaižot jau gatavu projektu (MD4 versiju), lietotne izvadīs: "Nevar piekļūt serverim", tā nav katastrofiska problēma, vienkārši lietotne ielādējās ātrāk nekā pislēdzās pie servera, lai izlabot šo stāvokli var 2-3 reizes piespiēst pārslēdzēju - "Rādīt arhivētos", jo pagaidam pogu lapas atjaunošanak vel neesmu ieviesis.
