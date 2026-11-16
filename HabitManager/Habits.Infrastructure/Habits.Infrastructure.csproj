@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.23" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Habits.Application\Habits.Application.csproj" />
     <ProjectReference Include="..\src\Habits.Domain\Habits.Domain.csproj" />
   </ItemGroup>

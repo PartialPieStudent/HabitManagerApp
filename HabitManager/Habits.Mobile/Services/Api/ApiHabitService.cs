@@ -23,6 +23,9 @@ public sealed class ApiHabitService : IHabitService
         _currentUser = currentUser;
     }
 
+    // Lietotāja "šodien", lai sinhronizētu ar servera laiku
+    private static string TodayQuery => $"today={DateOnly.FromDateTime(DateTime.Now):yyyy-MM-dd}";
+
     // ---------------- Queries ----------------
 
     public async Task<IReadOnlyList<HabitDto>> GetHabitsAsync(bool includeArchived = false)
